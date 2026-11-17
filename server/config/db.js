@@ -1,13 +1,22 @@
 import mysql from "mysql2/promise";
 import "./env.js";
 
-// Check if Railway provided a full MYSQL_URL or DATABASE_URL
+// Check if Railway or another cloud provider provided a full MYSQL_URL or DATABASE_URL
 const connectionUri = process.env.MYSQL_URL || process.env.DATABASE_URL;
 
 let db;
 
 if (connectionUri) {
-  db = mysql.createPool(connectionUri);
+  // Support SSL configuration for cloud providers like Aiven, TiDB, or PlanetScale
+  const useSsl =
+    process.env.MYSQL_SSL === "true" ||
+    connectionUri.toLowerCase().includes("ssl");
+
+  db = mysql.createPool(
+    useSsl
+      ? { uri: connectionUri, ssl: { rejectUnauthorized: false } }
+      : connectionUri
+  );
 } else {
   db = mysql.createPool({
     host: process.env.MYSQLHOST || process.env.DB_HOST || "localhost",
