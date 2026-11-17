@@ -2,9 +2,9 @@
 import { getGenerativeModel } from "firebase/ai";
 import { ai } from "../config/firebase";
 
-// Updated to current active Google Gemini model
+// Configured to use gemini-3.5-flash-lite
 const model = getGenerativeModel(ai, {
-  model: "gemini-3.8-flash",
+  model: "gemini-3.5-flash-lite",
 });
 
 export async function* generateItineraryStream(tripData) {
