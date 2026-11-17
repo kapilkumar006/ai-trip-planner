@@ -32,10 +32,10 @@ const app = initializeApp(firebaseConfig);
 
 // ==========================================
 // APP CHECK DEBUG MODE
-// FOR LOCAL DEVELOPMENT
+// Ensures App Check operates without domain block
 // ==========================================
 
-if (import.meta.env.DEV) {
+if (typeof self !== "undefined") {
   self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
 

@@ -2,8 +2,9 @@
 import { getGenerativeModel } from "firebase/ai";
 import { ai } from "../config/firebase";
 
+// Standard production-ready model for Firebase AI
 const model = getGenerativeModel(ai, {
-  model: "gemini-3.5-flash-lite",
+  model: "gemini-2.0-flash",
 });
 
 export async function* generateItineraryStream(tripData) {
@@ -136,7 +137,7 @@ Create a useful itinerary that a real traveler could follow.
       normalizedMessage.includes("too many requests")
     ) {
       throw new Error(
-        "Gemini's free request limit has been reached. Please wait before trying again."
+        "Gemini request limit reached. Please wait a moment and try again."
       );
     }
 
@@ -153,7 +154,7 @@ Create a useful itinerary that a real traveler could follow.
     }
 
     throw new Error(
-      "Unable to generate your itinerary. Please try again later."
+      error?.message || "Unable to generate your itinerary. Please try again later."
     );
   }
 }
