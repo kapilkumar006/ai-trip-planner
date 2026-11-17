@@ -32,11 +32,11 @@ const app = initializeApp(firebaseConfig);
 
 // ==========================================
 // APP CHECK DEBUG MODE
-// Ensures App Check operates without domain block
+// Pin consistent debug token for both local and production
 // ==========================================
 
 if (typeof self !== "undefined") {
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = "0785aec4-a551-4996-a78e-39d00f6803b4";
 }
 
 // ==========================================
