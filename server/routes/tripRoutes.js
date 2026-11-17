@@ -14,6 +14,7 @@ router.use(verifyToken);
 
 // ==========================================
 // HELPER: GET ITINERARY FROM MONGODB
+// Safe lookup that handles disconnection/timeout
 // ==========================================
 
 const getMongoItinerary = async (mongodbId) => {
@@ -21,9 +22,19 @@ const getMongoItinerary = async (mongodbId) => {
     return null;
   }
 
-  const document = await Itinerary.findById(mongodbId).lean();
+  // If MongoDB is not actively connected (1 = connected), return null instead of hanging
+  if (mongoose.connection.readyState !== 1) {
+    console.warn("MongoDB is not currently connected. Skipping MongoDB lookup.");
+    return null;
+  }
 
-  return document ? document.itinerary : null;
+  try {
+    const document = await Itinerary.findById(mongodbId).maxTimeMS(3000).lean();
+    return document ? document.itinerary : null;
+  } catch (lookupErr) {
+    console.warn("MongoDB itinerary lookup warning:", lookupErr.message);
+    return null;
+  }
 };
 
 
