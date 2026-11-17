@@ -122,21 +122,21 @@ if (fs.existsSync(distPath)) {
 
 // START SERVER
 const startServer = async () => {
-  try {
-    // Connect MongoDB first
-    await connectMongoDB();
+  // Bind explicitly to 0.0.0.0 for containerized platforms (Railway, Render, Docker)
+  app.listen(PORT, "0.0.0.0", async () => {
+    console.log(`Server running on port ${PORT}`);
 
-    // Verify and initialize MySQL tables
-    await initDatabase();
+    try {
+      // Connect MongoDB
+      await connectMongoDB();
 
-    // Start Express after successful database connections
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error("Unable to start server:", error.message);
-    process.exit(1);
-  }
+      // Verify and initialize MySQL tables
+      await initDatabase();
+      console.log("All database connections and tables verified.");
+    } catch (error) {
+      console.error("Database initialization notice:", error.message);
+    }
+  });
 };
 
 startServer();
