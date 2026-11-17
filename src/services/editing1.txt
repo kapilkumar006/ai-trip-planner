@@ -1,0 +1,385 @@
+
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import html2pdf from "html2pdf.js";
+import Navbar from "../components/Navbar";
+import { generateItineraryStream } from "../services/aiService";
+import "../styles/TravelPlan.css";
+
+function TravelPlan() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const formData = useMemo(() => {
+    if (location.state) {
+      return location.state;
+    }
+
+    try {
+      const savedTrip = localStorage.getItem("tripData");
+      return savedTrip ? JSON.parse(savedTrip) : null;
+    } catch (error) {
+      console.error("Error loading saved trip:", error);
+      return null;
+    }
+  }, [location.state]);
+
+  const [itinerary, setItinerary] = useState(
+    formData?.itinerary || ""
+  );
+
+  const [isStreaming, setIsStreaming] = useState(
+    Boolean(formData && !formData.itinerary)
+  );
+
+  const [streamError, setStreamError] = useState("");
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      !formData ||
+      formData.itinerary ||
+      startedRef.current
+    ) {
+      return;
+    }
+
+    // Prevent duplicate requests when React StrictMode is enabled.
+    startedRef.current = true;
+
+    let completeText = "";
+
+    const generate = async () => {
+      try {
+        setIsStreaming(true);
+        setStreamError("");
+
+        for await (const text of generateItineraryStream(formData)) {
+          completeText += text;
+          setItinerary(completeText);
+        }
+
+        if (!completeText.trim()) {
+          throw new Error(
+            "Gemini finished without returning an itinerary."
+          );
+        }
+
+        const completeTripData = {
+          ...formData,
+          itinerary: completeText,
+          streaming: false,
+        };
+
+        localStorage.setItem(
+          "tripData",
+          JSON.stringify(completeTripData)
+        );
+
+        console.log("Itinerary saved successfully.");
+      } catch (error) {
+        console.error("Itinerary streaming failed:", error);
+
+        setStreamError(
+          error.message ||
+            "Unable to generate your itinerary. Please try again."
+        );
+
+        // Preserve any partial response if generation fails.
+        if (completeText.trim()) {
+          localStorage.setItem(
+            "tripData",
+            JSON.stringify({
+              ...formData,
+              itinerary: completeText,
+              streaming: false,
+            })
+          );
+        }
+      } finally {
+        setIsStreaming(false);
+      }
+    };
+
+    generate();
+  }, [formData]);
+
+  const handleModifyPlan = () => {
+    navigate("/destinations", {
+      state: formData,
+    });
+  };
+
+  const handleDownload = async () => {
+    if (isStreaming) {
+      alert("Please wait until your itinerary is complete.");
+      return;
+    }
+
+    if (streamError && !itinerary.trim()) {
+      alert("There is no itinerary to download.");
+      return;
+    }
+
+    const output = document.getElementById(
+      "travel-plan-output"
+    );
+
+    if (!output) {
+      alert("Travel itinerary not found.");
+      return;
+    }
+
+    try {
+      const safeDestination = String(
+        formData.destination || "Trip"
+      )
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+        .trim()
+        .replace(/\s+/g, "_")
+        .slice(0, 60) || "Trip";
+
+      const options = {
+        margin: [10, 10, 10, 10],
+        filename: `Sanchari_${safeDestination}_Itinerary.pdf`,
+        image: {
+          type: "jpeg",
+          quality: 0.95,
+        },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+        },
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait",
+        },
+        pagebreak: {
+          mode: ["css", "legacy"],
+          avoid: [
+            ".itinerary-title",
+            ".ai-itinerary h1",
+            ".ai-itinerary h2",
+            ".ai-itinerary h3",
+            ".ai-itinerary li",
+          ],
+        },
+      };
+
+      await html2pdf()
+        .set(options)
+        .from(output)
+        .save();
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      alert("Unable to create PDF. Please try again.");
+    }
+  };
+
+  if (!formData) {
+    return (
+      <>
+        <Navbar />
+        <div className="travel-plan-page">
+          <div className="travel-plan-container no-trip">
+            <div className="no-trip-icon">🌍</div>
+            <h2>No Trip Details Found</h2>
+            <p>
+              Please go back and create your travel plan first.
+            </p>
+            <button
+              className="modify-btn"
+              onClick={() => navigate("/destinations")}
+            >
+              ← Plan a Trip
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+
+      <div className="travel-plan-page">
+        <div className="travel-plan-container">
+          <div className="travel-plan-header">
+            <div>
+              <span className="travel-plan-label">
+                ✨ YOUR PERSONALIZED TRIP
+              </span>
+              <h1>Your Travel Plan 🌍</h1>
+              <p>
+                Your personalized itinerary created by Sanchari AI
+              </p>
+            </div>
+
+            <button
+              className="download-btn"
+              onClick={handleDownload}
+              disabled={isStreaming}
+            >
+              📥 {isStreaming ? "Generating..." : "Download"}
+            </button>
+          </div>
+
+          <div className="trip-summary">
+            <div className="summary-card">
+              <span className="summary-icon">📍</span>
+              <div>
+                <span className="summary-label">Traveling From</span>
+                <strong>{formData.origin || "Not specified"}</strong>
+              </div>
+            </div>
+
+            <div className="summary-card">
+              <span className="summary-icon">📌</span>
+              <div>
+                <span className="summary-label">Destination</span>
+                <strong>{formData.destination || "Not specified"}</strong>
+              </div>
+            </div>
+
+            <div className="summary-card">
+              <span className="summary-icon">🎭</span>
+              <div>
+                <span className="summary-label">Travel Style</span>
+                <strong>{formData.travelStyle || "Not specified"}</strong>
+              </div>
+            </div>
+
+            <div className="summary-card">
+              <span className="summary-icon">👥</span>
+              <div>
+                <span className="summary-label">Travellers</span>
+                <strong>{formData.travelers || "1"}</strong>
+              </div>
+            </div>
+
+            <div className="summary-card">
+              <span className="summary-icon">✈️</span>
+              <div>
+                <span className="summary-label">Travel Mode</span>
+                <strong>{formData.travelMode || "Not specified"}</strong>
+              </div>
+            </div>
+
+            <div className="summary-card">
+              <span className="summary-icon">📅</span>
+              <div>
+                <span className="summary-label">Duration</span>
+                <strong>{formData.duration} Days</strong>
+              </div>
+            </div>
+
+            <div className="summary-card">
+              <span className="summary-icon">💰</span>
+              <div>
+                <span className="summary-label">Budget</span>
+                <strong>${formData.budget ?? "Not specified"}</strong>
+              </div>
+            </div>
+
+            <div className="summary-card">
+              <span className="summary-icon">⚕️</span>
+              <div>
+                <span className="summary-label">Health</span>
+                <strong>
+                  {formData.healthConsiderations || "None"}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <section
+            id="travel-plan-output"
+            className="itinerary-section"
+          >
+            <div className="itinerary-title">
+              <div className="robot-icon">🤖</div>
+              <div>
+                <h2>AI Travel Itinerary</h2>
+                <p>
+                  Your day-by-day personalized travel plan
+                </p>
+              </div>
+            </div>
+
+            <div className="ai-itinerary" aria-live="polite">
+              {itinerary ? (
+                <ReactMarkdown>{itinerary}</ReactMarkdown>
+              ) : null}
+
+              {isStreaming && (
+                <div className="streaming-status" role="status">
+                  <span>🤖</span>
+                  <p>
+                    {itinerary
+                      ? "Sanchari is continuing your itinerary..."
+                      : "Sanchari is planning your trip..."}
+                  </p>
+                </div>
+              )}
+
+              {streamError && (
+                <div className="empty-itinerary" role="alert">
+                  <h3>Unable to complete your itinerary</h3>
+                  <p>{streamError}</p>
+                  <button
+                    className="modify-btn"
+                    onClick={() => navigate("/destinations")}
+                  >
+                    ← Try Again
+                  </button>
+                </div>
+              )}
+
+              {!itinerary && !isStreaming && !streamError && (
+                <div className="empty-itinerary">
+                  <h3>No itinerary generated</h3>
+                  <p>Please create your travel plan again.</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <div className="travel-plan-actions">
+            <button
+              className="modify-btn"
+              onClick={handleModifyPlan}
+            >
+              ✏️ Modify Trip
+            </button>
+
+            <button
+              className="download-btn bottom-download"
+              onClick={handleDownload}
+              disabled={isStreaming}
+            >
+              📥 Download Itinerary
+            </button>
+          </div>
+
+          <div className="happy-journey">
+            <span>✈️</span>
+            <h3>Happy Journey!</h3>
+            <span>🌍</span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default TravelPlan;

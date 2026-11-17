@@ -1,0 +1,658 @@
+/* =========================================
+   AUTH PAGE
+   ========================================= */
+
+.auth-page {
+    min-height: 100vh;
+
+    background: #ead09b;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 40px;
+
+    box-sizing: border-box;
+
+    font-family: 'Poppins', sans-serif;
+}
+
+
+/* =========================================
+   MAIN AUTH CARD
+   ========================================= */
+
+.auth-card {
+    width: 100%;
+    max-width: 1250px;
+
+    min-height: 760px;
+
+    background: #0d0d0d;
+
+    border-radius: 32px;
+
+    overflow: hidden;
+
+    display: grid;
+
+    grid-template-columns: 1.05fr 1fr;
+
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.35);
+}
+
+
+/* =========================================
+   LEFT IMAGE SECTION
+   ========================================= */
+
+.auth-image-section {
+    position: relative;
+
+    min-height: 760px;
+
+    background-size: cover;
+
+    background-position: center;
+
+    background-repeat: no-repeat;
+
+    transition:
+        background-image 1s ease-in-out;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: space-between;
+
+    padding: 55px;
+
+    box-sizing: border-box;
+}
+
+
+/* Dark gradient over image */
+
+.auth-image-section::after {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.75),
+            rgba(0, 0, 0, 0.05) 65%
+        );
+
+    pointer-events: none;
+}
+
+
+/* =========================================
+   LOGO
+   ========================================= */
+
+.auth-logo {
+    position: relative;
+
+    z-index: 2;
+
+    color: white;
+
+    font-size: 23px;
+
+    font-weight: 600;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+.logo-icon {
+    color: #ffbd00;
+
+    font-size: 30px;
+}
+
+
+/* =========================================
+   IMAGE CONTENT
+   ========================================= */
+
+.auth-image-content {
+    position: relative;
+
+    z-index: 2;
+
+    color: white;
+}
+
+.small-line {
+    width: 28px;
+
+    height: 4px;
+
+    background: white;
+
+    border-radius: 10px;
+
+    margin-bottom: 18px;
+}
+
+.auth-image-content h1 {
+    font-size: 52px;
+
+    line-height: 1.05;
+
+    margin: 0 0 18px;
+
+    font-weight: 700;
+}
+
+.auth-image-content p {
+    font-size: 20px;
+
+    line-height: 1.45;
+
+    margin: 0;
+
+    color: #eeeeee;
+}
+
+
+/* =========================================
+   RIGHT FORM SECTION
+   ========================================= */
+
+.auth-form-section {
+    background: #0d0d0d;
+
+    color: white;
+
+    padding: 60px 70px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================
+   SIGNUP / LOGIN TOGGLE
+   ========================================= */
+
+.auth-toggle {
+    display: flex;
+
+    background: #292929;
+
+    border-radius: 17px;
+
+    padding: 4px;
+
+    margin-bottom: 42px;
+}
+
+.auth-toggle button {
+    border: none;
+
+    background: transparent;
+
+    color: white;
+
+    padding: 11px 23px;
+
+    min-width: 85px;
+
+    border-radius: 13px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    transition: 0.25s ease;
+}
+
+
+/* ACTIVE BUTTON */
+
+.auth-toggle button.auth-toggle-active {
+    background: #ffbd00;
+
+    color: #111;
+
+    font-weight: 600;
+
+    box-shadow:
+        0 0 18px rgba(255, 189, 0, 0.3);
+}
+
+
+/* =========================================
+   FORM CONTENT
+   ========================================= */
+
+.auth-form-content {
+    width: 100%;
+
+    max-width: 425px;
+
+    text-align: center;
+}
+
+.auth-form-content h2 {
+    color: white;
+
+    font-size: 38px;
+
+    margin: 0 0 30px;
+
+    font-weight: 600;
+}
+
+.auth-subtitle {
+    color: #999;
+
+    margin-top: -20px;
+
+    margin-bottom: 25px;
+
+    font-size: 14px;
+}
+
+
+/* =========================================
+   NAME ROW
+   ========================================= */
+
+.name-row {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 12px;
+}
+
+
+/* =========================================
+   INPUT
+   ========================================= */
+
+.auth-input {
+    position: relative;
+
+    width: 100%;
+
+    margin-bottom: 16px;
+}
+
+.auth-input input {
+    width: 100%;
+
+    height: 52px;
+
+    box-sizing: border-box;
+
+    background: #242424;
+
+    border: 1px solid transparent;
+
+    border-radius: 14px;
+
+    padding: 0 45px;
+
+    color: white;
+
+    outline: none;
+
+    font-size: 14px;
+
+    transition: 0.25s ease;
+}
+
+.auth-input input::placeholder {
+    color: #999;
+}
+
+.auth-input input:focus {
+    border-color: #ffbd00;
+
+    box-shadow:
+        0 0 12px rgba(255, 189, 0, 0.15);
+}
+
+
+/* =========================================
+   INPUT ICON
+   ========================================= */
+
+.input-icon {
+    position: absolute;
+
+    left: 17px;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: #aaa;
+
+    z-index: 2;
+
+    font-size: 16px;
+}
+
+
+/* =========================================
+   PASSWORD TOGGLE
+   ========================================= */
+
+.password-toggle {
+    position: absolute;
+
+    right: 13px;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    background: transparent;
+
+    border: none;
+
+    color: #aaa;
+
+    cursor: pointer;
+
+    font-size: 17px;
+
+    padding: 5px;
+}
+
+
+/* =========================================
+   MAIN BUTTON
+   ========================================= */
+
+.auth-submit {
+    width: 100%;
+
+    height: 52px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: #ffbd00;
+
+    color: #111;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    margin-top: 5px;
+
+    box-shadow:
+        0 5px 20px rgba(255, 189, 0, 0.2);
+
+    transition: 0.25s ease;
+}
+
+.auth-submit:hover {
+    background: #ffd34d;
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================
+   DIVIDER
+   ========================================= */
+
+.auth-divider {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    margin: 28px 0 20px;
+
+    color: #999;
+}
+
+.auth-divider span {
+    height: 1px;
+
+    background: #333;
+
+    flex: 1;
+}
+
+.auth-divider p {
+    margin: 0;
+
+    font-size: 13px;
+}
+
+
+/* =========================================
+   SOCIAL BUTTONS
+   ========================================= */
+
+.social-buttons {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 10px;
+}
+
+.social-buttons button {
+    height: 42px;
+
+    background: #242424;
+
+    border: none;
+
+    border-radius: 12px;
+
+    color: white;
+
+    cursor: pointer;
+
+    font-size: 19px;
+
+    transition: 0.2s ease;
+}
+
+.social-buttons button:hover {
+    background: #303030;
+}
+
+
+/* =========================================
+   SWITCH LOGIN / SIGNUP
+   ========================================= */
+
+.switch-auth {
+    color: #888;
+
+    font-size: 13px;
+
+    margin-top: 25px;
+}
+
+.switch-auth button {
+    background: none;
+
+    border: none;
+
+    color: #ffbd00;
+
+    cursor: pointer;
+
+    font-weight: 600;
+
+    margin-left: 5px;
+}
+
+
+/* =========================================
+   IMAGE INDICATORS
+   ========================================= */
+
+.auth-image-dots {
+    position: absolute;
+
+    z-index: 3;
+
+    bottom: 28px;
+
+    right: 35px;
+
+    display: flex;
+
+    gap: 6px;
+}
+
+.auth-image-dot {
+    width: 7px;
+
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.45);
+
+    transition: 0.3s ease;
+}
+
+.auth-image-dot.active {
+    width: 22px;
+
+    border-radius: 10px;
+
+    background: #ffbd00;
+}
+
+
+/* =========================================
+   TABLET
+   ========================================= */
+
+@media (max-width: 900px) {
+
+    .auth-page {
+        padding: 20px;
+    }
+
+    .auth-card {
+        grid-template-columns: 1fr;
+
+        max-width: 550px;
+    }
+
+    .auth-image-section {
+        min-height: 350px;
+
+        padding: 35px;
+    }
+
+    .auth-image-content h1 {
+        font-size: 40px;
+    }
+
+    .auth-image-content p {
+        font-size: 16px;
+    }
+
+    .auth-form-section {
+        padding: 45px 30px;
+    }
+}
+
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 480px) {
+
+    .auth-page {
+        padding: 0;
+    }
+
+    .auth-card {
+        min-height: 100vh;
+
+        border-radius: 0;
+    }
+
+    .auth-image-section {
+        min-height: 280px;
+
+        padding: 25px;
+    }
+
+    .auth-image-content h1 {
+        font-size: 34px;
+    }
+
+    .auth-image-content p {
+        font-size: 14px;
+    }
+
+    .auth-form-section {
+        padding: 35px 20px;
+    }
+
+    .auth-form-content h2 {
+        font-size: 30px;
+    }
+
+    .name-row {
+        grid-template-columns: 1fr;
+
+        gap: 0;
+    }
+
+    .auth-image-dots {
+        bottom: 18px;
+
+        right: 20px;
+    }
+}
+/* Back to home link used on Login and Signup */
+.auth-home-link {
+    display: block;
+    margin: 18px auto 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 13px;
+    transition: color 0.2s ease;
+}
+
+.auth-home-link:hover {
+    color: #ffbd00;
+}

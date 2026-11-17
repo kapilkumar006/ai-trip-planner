@@ -1,0 +1,29 @@
+contact.php path in local
+"C:\xampp\htdocs\sanchari-api\contact.php"
+
+
+for running only php
+http://localhost/sanchari-api/contact.php"
+
+
+
+
+for mysql operations
+http://localhost/phpmyadmin/
+
+for running express js
+node server/server.js
+
+for running FE server
+npm run dev
+
+srikumartesting@gmail.com
+srikumar
+testuser@example.com
+Test@123
+
+cmd
+
+srikumar102000_db_user
+Sanchari@MongoDB
+mongodb+srv://srikumar102000_db_user:<db_password>@cluster0.4lhr8zu.mongodb.net/

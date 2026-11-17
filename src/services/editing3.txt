@@ -1,0 +1,872 @@
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
+
+import "../styles/Destinations.css";
+
+const initialForm = {
+  travelingFrom: "",
+  otherTravelingFrom: "",
+  destination: "",
+  tripType: "",
+  numPeople: "",
+  budget: "",
+  travelMode: "Plane",
+  numDays: "",
+  healthConditions: "",
+};
+
+const commonCities = [
+  "Hyderabad, India",
+  "Mumbai, India",
+  "Delhi, India",
+  "Bengaluru, India",
+  "Chennai, India",
+  "Kolkata, India",
+  "Los Angeles, USA",
+  "London, UK",
+  "Paris, France",
+  "Sydney, Australia",
+  "Tokyo, Japan",
+  "Dallas, USA",
+];
+
+function Destinations() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [cities, setCities] = useState([]);
+  const [loadingCities, setLoadingCities] = useState(true);
+  const [citiesError, setCitiesError] = useState("");
+
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedCity, setSelectedCity] = useState(null);
+  const [formData, setFormData] = useState(initialForm);
+  const [errors, setErrors] = useState({});
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const [fromSuggestions, setFromSuggestions] = useState([]);
+
+  // Fetch destination cards from backend
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        setLoadingCities(true);
+        setCitiesError("");
+
+        const response = await fetch(
+          "http://localhost:5000/api/destinations"
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch destinations");
+        }
+
+        const data = await response.json();
+
+        const backendCities = (data.destinations || []).map((city) => ({
+          id: city.id,
+          name: city.name,
+          image: city.image,
+          about: city.description,
+        }));
+
+        const customDestinationCard = {
+          id: "custom",
+          name: "Select your own destination",
+          image: "/assets/pics/Unknown 5.jpeg.jpg",
+          about:
+            "From cobblestone streets to breathtaking vistas, the world's hidden cities await.",
+        };
+
+        setCities([...backendCities, customDestinationCard]);
+      } catch (error) {
+        console.error("Destination fetch error:", error);
+
+        setCitiesError(
+          "Unable to load destinations. Please make sure the backend server is running."
+        );
+      } finally {
+        setLoadingCities(false);
+      }
+    };
+
+    fetchDestinations();
+  }, []);
+
+  // Read destination data passed from another page
+  useEffect(() => {
+    if (location.state?.destination) {
+      setFormData((previous) => ({
+        ...previous,
+        ...location.state,
+        destination:
+          location.state.destination ?? previous.destination,
+      }));
+    }
+  }, [location.state]);
+
+  // Add/remove body class when modal is open
+  useEffect(() => {
+    document.body.classList.toggle(
+      "city-form-open",
+      isFormOpen
+    );
+
+    return () => {
+      document.body.classList.remove("city-form-open");
+    };
+  }, [isFormOpen]);
+
+  const selectedDestinationText = useMemo(() => {
+    return (
+      selectedCity?.name ||
+      formData.destination ||
+      "your dream destination"
+    );
+  }, [selectedCity, formData.destination]);
+
+  const openForm = (city) => {
+    setSelectedCity(city);
+
+    setFormData((previous) => ({
+      ...initialForm,
+
+      travelingFrom: previous.travelingFrom,
+      otherTravelingFrom: previous.otherTravelingFrom,
+
+      destination:
+        city.name === "Select your own destination"
+          ? ""
+          : city.name,
+
+      travelMode: "Plane",
+    }));
+
+    setErrors({});
+    setDestinationSuggestions([]);
+    setFromSuggestions([]);
+    setIsFormOpen(true);
+  };
+
+  const closeForm = () => {
+    setIsFormOpen(false);
+    setErrors({});
+    setDestinationSuggestions([]);
+    setFromSuggestions([]);
+  };
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+
+    if (errors[name]) {
+      setErrors((previous) => ({
+        ...previous,
+        [name]: "",
+      }));
+    }
+
+    // Clear manually entered city
+    if (name === "travelingFrom" && value !== "Other") {
+      setFormData((previous) => ({
+        ...previous,
+        otherTravelingFrom: "",
+      }));
+
+      setFromSuggestions([]);
+    }
+
+    // Automatically set traveler count
+    if (name === "tripType") {
+      if (value === "Solo") {
+        setFormData((previous) => ({
+          ...previous,
+          tripType: value,
+          numPeople: "1",
+        }));
+      } else if (value === "Couple") {
+        setFormData((previous) => ({
+          ...previous,
+          tripType: value,
+          numPeople: "2",
+        }));
+      } else {
+        setFormData((previous) => ({
+          ...previous,
+          tripType: value,
+          numPeople: "",
+        }));
+      }
+    }
+  };
+
+  const handleDestinationInput = (event) => {
+    const value = event.target.value;
+
+    handleChange(event);
+
+    if (value.trim().length < 2) {
+      setDestinationSuggestions([]);
+      return;
+    }
+
+    const results = commonCities.filter((city) =>
+      city.toLowerCase().includes(value.toLowerCase())
+    );
+
+    setDestinationSuggestions(results.slice(0, 6));
+  };
+
+  const handleOtherFromInput = (event) => {
+    const value = event.target.value;
+
+    handleChange(event);
+
+    if (value.trim().length < 2) {
+      setFromSuggestions([]);
+      return;
+    }
+
+    const results = commonCities.filter((city) =>
+      city.toLowerCase().includes(value.toLowerCase())
+    );
+
+    setFromSuggestions(results.slice(0, 6));
+  };
+
+  const validateForm = () => {
+    const nextErrors = {};
+
+    const origin =
+      formData.travelingFrom === "Other"
+        ? formData.otherTravelingFrom.trim()
+        : formData.travelingFrom.trim();
+
+    if (!origin) {
+      nextErrors.travelingFrom =
+        "Please select your starting city.";
+    }
+
+    if (!formData.destination.trim()) {
+      nextErrors.destination =
+        "Please enter your destination.";
+    }
+
+    if (!formData.tripType) {
+      nextErrors.tripType =
+        "Please select a travel style.";
+    }
+
+    if (
+      formData.tripType !== "Solo" &&
+      !formData.numPeople
+    ) {
+      nextErrors.numPeople =
+        "Please select the number of travelers.";
+    }
+
+    if (
+      !formData.budget ||
+      Number(formData.budget) < 100
+    ) {
+      nextErrors.budget =
+        "Please enter a budget of at least 100.";
+    }
+
+    if (
+      !formData.numDays ||
+      Number(formData.numDays) < 1
+    ) {
+      nextErrors.numDays =
+        "Please enter at least 1 day.";
+    }
+
+    setErrors(nextErrors);
+
+    return Object.keys(nextErrors).length === 0;
+  };
+
+
+const handleSubmit = (event) => {
+  event.preventDefault();
+
+  if (!validateForm() || isGenerating) {
+    return;
+  }
+
+  const tripData = {
+    origin:
+      formData.travelingFrom === "Other"
+        ? formData.otherTravelingFrom.trim()
+        : formData.travelingFrom,
+
+    destination: formData.destination.trim(),
+    travelStyle: formData.tripType,
+
+    travelers:
+      formData.tripType === "Solo"
+        ? "1"
+        : formData.numPeople,
+
+    budget: formData.budget,
+    travelMode: formData.travelMode,
+    duration: formData.numDays,
+
+    healthConsiderations:
+      formData.healthConditions.trim(),
+  };
+
+  const initialTripData = {
+    ...tripData,
+    itinerary: "",
+    streaming: true,
+  };
+
+  try {
+    setIsGenerating(true);
+
+    // Save the trip so refreshing the plan page
+    // doesn't lose the trip details.
+    localStorage.setItem(
+      "tripData",
+      JSON.stringify(initialTripData)
+    );
+
+    console.log("Opening the streaming travel plan...");
+    console.log(tripData);
+
+    closeForm();
+
+    navigate("/travel-plan", {
+      state: initialTripData,
+    });
+  } catch (error) {
+    console.error("Unable to open travel plan:", error);
+
+    alert("Unable to open your travel plan. Please try again.");
+  } finally {
+    setIsGenerating(false);
+  }
+};
+
+
+
+ 
+
+  return (
+    <>
+      <Navbar />
+
+      <main className="city-destinations-page">
+        <video
+          className="city-background-video"
+          autoPlay
+          muted
+          loop
+          playsInline
+        >
+          <source
+            src="/assets/background videos/detailBackgroundVideos.mp4"
+            type="video/mp4"
+          />
+        </video>
+
+        <div className="city-video-overlay" />
+
+        <section className="city-destinations-header">
+          <p className="city-eyebrow">
+            EXPLORE THE WORLD
+          </p>
+
+          <h1>Choose Your Destination</h1>
+
+          <p>
+            Pick a destination and tell us how you
+            want to travel.
+          </p>
+        </section>
+
+        {loadingCities && (
+          <p className="city-loading">
+            Loading destinations...
+          </p>
+        )}
+
+        {citiesError && (
+          <p className="city-error">
+            {citiesError}
+          </p>
+        )}
+
+        {!loadingCities && !citiesError && (
+          <section
+            className="city-card-grid"
+            aria-label="Popular destinations"
+          >
+            {cities.map((city) => (
+              <button
+                key={city.id}
+                type="button"
+                className="city-card"
+                style={{
+                  backgroundImage: `url("${city.image}")`,
+                }}
+                onClick={() => openForm(city)}
+              >
+                <span className="city-overlay">
+                  <span className="city-name">
+                    {city.name}
+                  </span>
+
+                  <span className="city-description">
+                    {city.about}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </section>
+        )}
+      </main>
+
+      {isFormOpen && (
+        <div
+          className="city-form-backdrop"
+          onMouseDown={closeForm}
+        >
+          <div
+            className="city-form-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="plan-adventure-title"
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <button
+              type="button"
+              className="city-form-close"
+              onClick={closeForm}
+              aria-label="Close travel form"
+            >
+              ×
+            </button>
+
+            <div className="city-form-heading">
+              <h2 id="plan-adventure-title">
+                Plan Your Adventure 🌍
+              </h2>
+
+              <p>
+                Planning a trip to{" "}
+                <strong>
+                  {selectedDestinationText}
+                </strong>
+              </p>
+            </div>
+
+            <form
+              id="travelForm"
+              onSubmit={handleSubmit}
+              noValidate
+            >
+              <div className="city-form-group autocomplete-group">
+                <label htmlFor="travelingFrom">
+                  📍 Where Are You Traveling From?
+                </label>
+
+                <select
+                  id="travelingFrom"
+                  name="travelingFrom"
+                  value={formData.travelingFrom}
+                  onChange={handleChange}
+                  className={
+                    errors.travelingFrom
+                      ? "field-error"
+                      : ""
+                  }
+                >
+                  <option value="">
+                    -- Select Your City --
+                  </option>
+
+                  <option value="Hyderabad">
+                    Hyderabad
+                  </option>
+
+                  <option value="Los Angeles">
+                    Los Angeles
+                  </option>
+
+                  <option value="London">
+                    London
+                  </option>
+
+                  <option value="Paris">
+                    Paris
+                  </option>
+
+                  <option value="Sydney">
+                    Sydney
+                  </option>
+
+                  <option value="Tokyo">
+                    Tokyo
+                  </option>
+
+                  <option value="Dallas">
+                    Dallas
+                  </option>
+
+                  <option value="Mumbai">
+                    Mumbai
+                  </option>
+
+                  <option value="Other">
+                    Other (Enter Manually)
+                  </option>
+                </select>
+
+                {formData.travelingFrom ===
+                  "Other" && (
+                  <>
+                    <input
+                      type="text"
+                      name="otherTravelingFrom"
+                      value={
+                        formData.otherTravelingFrom
+                      }
+                      onChange={
+                        handleOtherFromInput
+                      }
+                      placeholder="Enter your city manually"
+                      className={
+                        errors.travelingFrom
+                          ? "field-error"
+                          : ""
+                      }
+                    />
+
+                    {fromSuggestions.length > 0 && (
+                      <ul className="autocomplete-list">
+                        {fromSuggestions.map(
+                          (city) => (
+                            <li
+                              key={city}
+                              onClick={() => {
+                                setFormData(
+                                  (previous) => ({
+                                    ...previous,
+                                    otherTravelingFrom:
+                                      city,
+                                  })
+                                );
+
+                                setFromSuggestions(
+                                  []
+                                );
+                              }}
+                            >
+                              {city}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    )}
+                  </>
+                )}
+
+                {errors.travelingFrom && (
+                  <span className="warning">
+                    {errors.travelingFrom}
+                  </span>
+                )}
+              </div>
+
+              <div className="city-form-group autocomplete-group">
+                <label htmlFor="destination">
+                  🌟 Where’s Your Dream
+                  Destination?
+                </label>
+
+                <input
+                  type="text"
+                  id="destination"
+                  name="destination"
+                  value={formData.destination}
+                  onChange={
+                    handleDestinationInput
+                  }
+                  placeholder="E.g., Paris, Maldives, Tokyo"
+                  className={
+                    errors.destination
+                      ? "field-error"
+                      : ""
+                  }
+                  autoComplete="off"
+                />
+
+                {destinationSuggestions.length >
+                  0 && (
+                  <ul className="autocomplete-list">
+                    {destinationSuggestions.map(
+                      (city) => (
+                        <li
+                          key={city}
+                          onClick={() => {
+                            setFormData(
+                              (previous) => ({
+                                ...previous,
+                                destination: city,
+                              })
+                            );
+
+                            setDestinationSuggestions(
+                              []
+                            );
+                          }}
+                        >
+                          {city}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                )}
+
+                {errors.destination && (
+                  <span className="warning">
+                    {errors.destination}
+                  </span>
+                )}
+              </div>
+
+              <div className="city-form-group">
+                <label htmlFor="tripType">
+                  🎭 What’s Your Travel Style?
+                </label>
+
+                <select
+                  id="tripType"
+                  name="tripType"
+                  value={formData.tripType}
+                  onChange={handleChange}
+                  className={
+                    errors.tripType
+                      ? "field-error"
+                      : ""
+                  }
+                >
+                  <option value="">
+                    -- Select Travel Type --
+                  </option>
+
+                  <option value="Solo">
+                    🧳 Solo Adventure
+                  </option>
+
+                  <option value="Family">
+                    👨‍👩‍👧 Family Getaway
+                  </option>
+
+                  <option value="Friends">
+                    🎉 Friends’ Adventure
+                  </option>
+
+                  <option value="Couple">
+                    💑 Romantic Escape
+                  </option>
+                </select>
+
+                {errors.tripType && (
+                  <span className="warning">
+                    {errors.tripType}
+                  </span>
+                )}
+              </div>
+
+              {formData.tripType !== "Solo" && (
+                <div className="city-form-group">
+                  <label htmlFor="numPeople">
+                    👥 How Many Are Traveling?
+                  </label>
+
+                  <select
+                    id="numPeople"
+                    name="numPeople"
+                    value={formData.numPeople}
+                    onChange={handleChange}
+                    disabled={
+                      !formData.tripType ||
+                      formData.tripType === "Couple"
+                    }
+                    className={
+                      errors.numPeople
+                        ? "field-error"
+                        : ""
+                    }
+                  >
+                    <option value="">
+                      -- Select Number of
+                      Travelers --
+                    </option>
+
+                    {Array.from(
+                      { length: 9 },
+                      (_, index) => (
+                        <option
+                          key={index + 1}
+                          value={String(index + 1)}
+                        >
+                          {index + 1}
+                        </option>
+                      )
+                    )}
+
+                    <option value="10+">
+                      10+
+                    </option>
+                  </select>
+
+                  {formData.tripType ===
+                    "Couple" && (
+                    <small className="field-note">
+                      Couple trips are set to 2
+                      travelers.
+                    </small>
+                  )}
+
+                  {errors.numPeople && (
+                    <span className="warning">
+                      {errors.numPeople}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="city-form-group">
+                <label htmlFor="budget">
+                  💰 What’s Your Budget for the
+                  Entire Trip ($)?
+                </label>
+
+                <input
+                  type="number"
+                  id="budget"
+                  name="budget"
+                  min="100"
+                  value={formData.budget}
+                  onChange={handleChange}
+                  placeholder="E.g., 2000"
+                  className={
+                    errors.budget
+                      ? "field-error"
+                      : ""
+                  }
+                />
+
+                {errors.budget && (
+                  <span className="warning">
+                    {errors.budget}
+                  </span>
+                )}
+              </div>
+
+              <div className="city-form-group">
+                <label htmlFor="travelMode">
+                  🚀 Preferred Mode of Travel?
+                </label>
+
+                <select
+                  id="travelMode"
+                  name="travelMode"
+                  value={formData.travelMode}
+                  onChange={handleChange}
+                >
+                  <option value="Plane">
+                    ✈ Flight
+                  </option>
+
+                  <option value="Train">
+                    🚆 Train Journey
+                  </option>
+
+                  <option value="Car">
+                    🚗 Road Trip
+                  </option>
+
+                  <option value="Ship">
+                    🚢 Cruise
+                  </option>
+                </select>
+              </div>
+
+              <div className="city-form-group">
+                <label htmlFor="numDays">
+                  🗓 How Many Days Are You
+                  Willing to Stay/Travel?
+                </label>
+
+                <input
+                  type="number"
+                  id="numDays"
+                  name="numDays"
+                  min="1"
+                  value={formData.numDays}
+                  onChange={handleChange}
+                  placeholder="Enter number of days"
+                  className={
+                    errors.numDays
+                      ? "field-error"
+                      : ""
+                  }
+                />
+
+                {errors.numDays && (
+                  <span className="warning">
+                    {errors.numDays}
+                  </span>
+                )}
+              </div>
+
+              <div className="city-form-group">
+                <label htmlFor="healthConditions">
+                  ⚕ Any Health Considerations?
+                </label>
+
+                <input
+                  type="text"
+                  id="healthConditions"
+                  name="healthConditions"
+                  value={
+                    formData.healthConditions
+                  }
+                  onChange={handleChange}
+                  placeholder="E.g., Asthma, Diabetes, None"
+                />
+              </div>
+
+
+           
+
+              <button
+  type="submit"
+  className="form-btn"
+  disabled={isGenerating}
+>
+  {isGenerating
+    ? "🤖 Creating Your Itinerary..."
+    : "🌍 Let’s Plan!"}
+</button>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default Destinations;
